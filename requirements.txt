@@ -1,0 +1,6 @@
+# Numerical examples and static/desktop plots
+numpy
+matplotlib
+
+# Run notebooks in VS Code
+ipykernel
