@@ -10,6 +10,7 @@
 - `UsageExample.ipynb`：Notebook 使用示例。
 - `Orthers/LinearRegression.py`：线性回归、梯度下降与成本曲线。
 - `Orthers/LogisticRegression.py`：逻辑回归，支持静态图与动态回放。
+- `Orthers/Overfitting.py`：可导入 Notebook 的过拟合实验，支持回归/分类、1~6 阶拟合、点击添加样本。
 - `images/`：笔记配图，迁移时需要一起保留。
 - `requirements.txt`：运行示例及 VS Code Notebook 的基本依赖。
 - `.gitignore`：排除虚拟环境、缓存和本地密钥文件。
@@ -81,6 +82,67 @@ python -m venv .venv
 ```
 
 重启笔记本内核，在绘图前的代码单元运行 `%matplotlib widget`。这条魔法命令仅用于 Notebook，不要写入普通 `.py` 脚本。交互图需要内核运行，静态输出更适合直接保存和阅读。
+
+### 在笔记中使用过拟合案例
+
+在项目根目录的 Notebook（例如 `MachineLearning.ipynb`）中，首次先运行：
+
+```python
+%pip install ipympl
+```
+
+安装后重启内核，再运行下面的单元格。交互模式设置必须放在绘图前：
+
+```python
+%matplotlib widget
+import matplotlib.pyplot as plt
+from Orthers.Overfitting import overfit_example
+
+plt.close("all")
+ofit = overfit_example(False)  # False：分类；True：回归
+```
+
+不需要截图中的 `display(output)`，图表和控件由模块直接创建。保留 `ofit` 变量，避免控件回调随对象被回收。
+
+- **Degree**：选择 1~6 阶，然后点击 **fit data**。更换阶数或添加数据后，旧拟合清除，需重新拟合。
+- **Regression / Categorical**：切换回归和分类；每种模式分别保留添加的样本。
+- **添加样本**：点击绘图区。分类默认添加红色 `y=1`；按住 Shift 点击添加蓝色 `y=0`，或通过 **New class** 选择标签。启用工具栏平移/缩放时不会添加数据。
+- **Reset data**：恢复当前模式的初始样本。默认种子固定，重新运行可复现实验。
+- 橙色点线 **ideal** 是生成数据的真实二次函数/分类边界；绿色线是拟合函数或预测概率为 0.5 的分类边界。
+
+建议在**同一批数据**上分别尝试 1、2、6 阶：1 阶无法表示真实的二次关系，通常欠拟合；高阶模型可能追随噪声。观察训练误差下降时，独立测试误差是否升高，而不只是看曲线是否弯曲。回归显示均方误差 MSE；分类显示交叉熵和准确率。测试集由同一分布独立生成，不参与拟合；若反复参考这些分数选模型，它实际承担的是验证集的作用。不是所有随机种子或新增样本都会让 6 阶最差。
+
+训练代码使用 NumPy：回归采用最小二乘，分类采用牛顿法和回溯线搜索，含极弱 L2（`1e-6`，截距不惩罚）以稳定数值。无需 scikit-learn 或 SciPy。图中文字使用英文，避免未安装中文字体时显示方框；代码注释为中文。
+
+也可以用代码控制，并查看数值：
+
+```python
+ofit.set_mode("Regression")
+ofit.set_degree(6)
+metrics = ofit.fit()
+print(metrics)
+# ofit.add_point(0.5, 1.2)  # 添加样本后重新 fit()
+# ofit.reset()
+```
+
+若只需静态图片，可在 `%matplotlib inline` 模式使用 `show=False`，再调用 `fit()` 和 `plt.show()`；静态图的按钮无法点击。桌面窗口也支持交互：`python Orthers/Overfitting.py`。交互图需要运行中的内核，重新打开笔记时应重新运行单元格。
+
+交互后端说明：[Matplotlib ipympl 官方文档](https://matplotlib.org/ipympl/)。
+
+更新 `Overfitting.py` 后，已运行的 Notebook 会继续使用内存里的旧版本。可重启内核后重新运行，或用以下单元格关闭旧图并重新加载模块：
+
+```python
+%matplotlib widget
+import importlib
+import matplotlib.pyplot as plt
+import Orthers.Overfitting as overfitting
+
+plt.close("all")
+importlib.reload(overfitting)
+ofit = overfitting.overfit_example(False)
+```
+
+交互已合并自动刷新请求，并复用散点、曲线和分类网格；按钮悬停不再刷新画布。Notebook 中的鼠标操作仍需要内核处理，如果其他单元格正在长时间运算，应等待其结束后再操作图表。
 
 ## 两台电脑之间同步
 
